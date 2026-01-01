@@ -42,8 +42,8 @@ class JEA_Admin {
     public function add_menu() {
         // 主菜单
         add_menu_page(
-            __('JE Analytics', 'jeanalytics'),
-            __('流量分析', 'jeanalytics'),
+            __('威软访客', 'jeanalytics'),
+            __('威软访客', 'jeanalytics'),
             'manage_options',
             'jeanalytics',
             array($this, 'render_dashboard'),
@@ -234,7 +234,7 @@ class JEA_Admin {
 
         wp_add_dashboard_widget(
             'jea_dashboard_widget',
-            __('📊 网站流量概览', 'jeanalytics'),
+            __('📊 威软访客 - 网站流量概览', 'jeanalytics'),
             array($this, 'render_dashboard_widget')
         );
     }

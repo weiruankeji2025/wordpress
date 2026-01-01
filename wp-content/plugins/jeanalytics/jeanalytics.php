@@ -1,11 +1,11 @@
 <?php
 /**
- * Plugin Name: JE Analytics - 智能流量分析
- * Plugin URI: https://jeanalytics.dev
- * Description: 一款专业、现代化的WordPress流量和访客分析工具，提供详尽的数据分析和精美的可视化界面
+ * Plugin Name: 威软访客 - 智能流量分析
+ * Plugin URI: https://github.com/weiruankeji2025/wordpress
+ * Description: 一款完全开源免费、专业现代化的WordPress流量和访客分析工具，提供详尽的数据分析和精美的可视化界面，数据本地存储，隐私友好
  * Version: 1.0.0
- * Author: JE Analytics Team
- * Author URI: https://jeanalytics.dev
+ * Author: 威软科技
+ * Author URI: https://github.com/weiruankeji2025
  * License: MIT
  * License URI: https://opensource.org/licenses/MIT
  * Text Domain: jeanalytics
