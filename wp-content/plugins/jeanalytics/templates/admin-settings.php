@@ -113,7 +113,7 @@ $settings = JEA_Settings::get();
 
     <!-- 插件信息 -->
     <div class="jea-settings-section" style="margin-top: 32px;">
-        <h2 class="jea-settings-title">ℹ️ <?php _e('关于 JE Analytics', 'jeanalytics'); ?></h2>
+        <h2 class="jea-settings-title">ℹ️ <?php _e('关于 威软访客', 'jeanalytics'); ?></h2>
 
         <div class="jea-grid jea-grid-3">
             <div>
@@ -132,7 +132,10 @@ $settings = JEA_Settings::get();
 
         <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--jea-border);">
             <p style="color: var(--jea-text-secondary); font-size: 14px;">
-                🎉 <?php _e('感谢使用 JE Analytics！这是一款轻量级、隐私友好的WordPress流量分析工具。', 'jeanalytics'); ?>
+                🎉 <?php _e('感谢使用 威软访客！这是一款完全开源免费、轻量级、隐私友好的WordPress流量分析工具。', 'jeanalytics'); ?>
+            </p>
+            <p style="color: var(--jea-text-muted); font-size: 13px; margin-top: 8px;">
+                📦 <?php _e('开源地址：', 'jeanalytics'); ?><a href="https://github.com/weiruankeji2025/wordpress" target="_blank">https://github.com/weiruankeji2025/wordpress</a>
             </p>
         </div>
     </div>
