@@ -1,1 +1,132 @@
-# wordpress
+# JE Analytics - WordPress 智能流量分析插件
+
+一款专业、现代化的WordPress流量和访客分析工具，提供详尽的数据分析和精美的可视化界面。
+
+## ✨ 功能特点
+
+### 📊 核心分析功能
+- **访客统计** - 独立访客、新访客、回访访客统计
+- **页面浏览量** - 详细的页面访问数据追踪
+- **会话分析** - 会话数、跳出率、平均时长
+- **趋势图表** - 直观的访问趋势可视化
+
+### 🌐 流量来源分析
+- 直接访问追踪
+- 搜索引擎来源识别（Google、百度、必应等）
+- 社交媒体来源追踪
+- 外部链接引荐统计
+- UTM参数完整支持
+
+### 👥 访客画像
+- 地理位置识别（国家、城市）
+- 设备类型分析（桌面、移动、平板）
+- 浏览器分布统计
+- 操作系统分析
+- 屏幕分辨率记录
+
+### ⚡ 实时监控
+- 当前在线访客数量
+- 实时访客列表
+- 热门页面实时排名
+- 地理分布可视化
+
+### 📈 页面级分析
+- 热门页面排行
+- 入口/出口页面统计
+- 页面停留时间
+- 滚动深度追踪
+
+### 🔧 其他功能
+- 事件追踪（点击、下载、外链）
+- 数据导出（CSV/JSON）
+- WordPress仪表板小部件
+- 多时间段对比分析
+- 隐私友好，数据本地存储
+
+## 📦 安装
+
+1. 将 `jeanalytics` 文件夹上传到 `/wp-content/plugins/` 目录
+2. 在WordPress后台「插件」页面激活插件
+3. 插件将自动创建必要的数据库表
+4. 在后台菜单找到「流量分析」开始使用
+
+## 🖥️ 系统要求
+
+- WordPress 5.0+
+- PHP 7.4+
+- MySQL 5.6+
+
+## 📁 文件结构
+
+```
+jeanalytics/
+├── jeanalytics.php              # 主插件文件
+├── includes/
+│   ├── class-jea-database.php   # 数据库管理
+│   ├── class-jea-tracker.php    # 访客追踪
+│   ├── class-jea-ajax.php       # AJAX处理
+│   ├── class-jea-stats.php      # 统计分析
+│   ├── class-jea-geoip.php      # 地理位置
+│   ├── class-jea-export.php     # 数据导出
+│   └── admin/
+│       ├── class-jea-admin.php     # 后台管理
+│       ├── class-jea-dashboard.php # 仪表板辅助
+│       └── class-jea-settings.php  # 设置管理
+├── assets/
+│   ├── css/
+│   │   └── admin.css            # 管理界面样式
+│   └── js/
+│       ├── tracker.js           # 前端追踪脚本
+│       └── admin.js             # 后台交互脚本
+├── templates/
+│   ├── admin-dashboard.php      # 仪表板模板
+│   ├── admin-realtime.php       # 实时访客模板
+│   ├── admin-pages.php          # 页面统计模板
+│   ├── admin-referrers.php      # 流量来源模板
+│   ├── admin-visitors.php       # 访客分析模板
+│   └── admin-settings.php       # 设置页面模板
+└── languages/                   # 语言文件目录
+```
+
+## 🗄️ 数据库表
+
+插件会创建以下数据库表：
+
+| 表名 | 说明 |
+|------|------|
+| `wp_jea_visitors` | 访客信息表 |
+| `wp_jea_pageviews` | 页面访问记录 |
+| `wp_jea_sessions` | 会话记录 |
+| `wp_jea_events` | 事件追踪 |
+| `wp_jea_realtime` | 实时访客数据 |
+| `wp_jea_stats_daily` | 每日统计汇总 |
+| `wp_jea_stats_pages` | 页面统计汇总 |
+| `wp_jea_stats_referrers` | 来源统计汇总 |
+
+## ⚙️ 配置选项
+
+在「流量分析 → 设置」页面可配置：
+
+- **追踪已登录用户** - 是否追踪登录用户的访问
+- **追踪管理员** - 是否追踪管理员访问
+- **排除IP地址** - 不追踪的IP列表
+- **数据保留天数** - 详细数据保留时间
+- **实时刷新间隔** - 实时页面刷新频率
+- **仪表板小部件** - 是否显示WordPress仪表板小部件
+
+## 🔒 隐私说明
+
+- 所有数据存储在您自己的服务器上
+- 不使用任何第三方追踪服务
+- 访客识别使用匿名哈希
+- 不存储敏感个人信息
+- 自动过滤机器人流量
+
+## 📄 开源协议
+
+MIT License
+
+## 🙏 致谢
+
+- Chart.js - 图表可视化
+- 免费GeoIP API - 地理位置服务
