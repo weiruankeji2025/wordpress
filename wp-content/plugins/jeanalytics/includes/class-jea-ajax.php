@@ -46,6 +46,10 @@ class JEA_Ajax {
         add_action('wp_ajax_jea_get_realtime_data', array($this, 'get_realtime_data'));
         add_action('wp_ajax_jea_get_chart_data', array($this, 'get_chart_data'));
         add_action('wp_ajax_jea_export_data', array($this, 'export_data'));
+        add_action('wp_ajax_jea_get_search_engines', array($this, 'get_search_engines'));
+        add_action('wp_ajax_jea_get_device_brands', array($this, 'get_device_brands'));
+        add_action('wp_ajax_jea_get_geo_stats', array($this, 'get_geo_stats'));
+        add_action('wp_ajax_jea_get_recent_visitors', array($this, 'get_recent_visitors'));
     }
 
     /**
@@ -519,5 +523,82 @@ class JEA_Ajax {
         } else {
             wp_send_json_error(array('message' => 'Export failed'));
         }
+    }
+
+    /**
+     * 获取搜索引擎列表
+     */
+    public function get_search_engines() {
+        check_ajax_referer('jea_admin', 'nonce');
+
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(array('message' => 'Permission denied'));
+            exit;
+        }
+
+        $range = isset($_POST['range']) ? sanitize_text_field($_POST['range']) : '7days';
+
+        $stats = new JEA_Stats();
+        $data = $stats->get_search_engines($range);
+
+        wp_send_json_success($data);
+    }
+
+    /**
+     * 获取设备品牌型号
+     */
+    public function get_device_brands() {
+        check_ajax_referer('jea_admin', 'nonce');
+
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(array('message' => 'Permission denied'));
+            exit;
+        }
+
+        $range = isset($_POST['range']) ? sanitize_text_field($_POST['range']) : '7days';
+
+        $stats = new JEA_Stats();
+        $data = $stats->get_device_brands($range);
+
+        wp_send_json_success($data);
+    }
+
+    /**
+     * 获取地理位置统计
+     */
+    public function get_geo_stats() {
+        check_ajax_referer('jea_admin', 'nonce');
+
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(array('message' => 'Permission denied'));
+            exit;
+        }
+
+        $range = isset($_POST['range']) ? sanitize_text_field($_POST['range']) : '7days';
+
+        $stats = new JEA_Stats();
+        $data = $stats->get_geo_stats($range);
+
+        wp_send_json_success($data);
+    }
+
+    /**
+     * 获取最近访客列表（含IP）
+     */
+    public function get_recent_visitors() {
+        check_ajax_referer('jea_admin', 'nonce');
+
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(array('message' => 'Permission denied'));
+            exit;
+        }
+
+        $range = isset($_POST['range']) ? sanitize_text_field($_POST['range']) : '7days';
+        $limit = isset($_POST['limit']) ? intval($_POST['limit']) : 50;
+
+        $stats = new JEA_Stats();
+        $data = $stats->get_recent_visitors($range, $limit);
+
+        wp_send_json_success($data);
     }
 }

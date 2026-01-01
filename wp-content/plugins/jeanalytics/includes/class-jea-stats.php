@@ -482,6 +482,7 @@ class JEA_Stats {
             "SELECT
                 referrer_domain,
                 referrer_type,
+                referrer,
                 COUNT(*) as sessions,
                 COUNT(DISTINCT visitor_id) as visitors,
                 SUM(is_bounce) as bounces,
@@ -491,6 +492,211 @@ class JEA_Stats {
              WHERE start_time BETWEEN %s AND %s AND referrer_domain != ''
              GROUP BY referrer_domain
              ORDER BY sessions DESC
+             LIMIT %d",
+            $date_range['start'],
+            $date_range['end'],
+            $limit
+        ));
+    }
+
+    /**
+     * 获取搜索引擎详细列表
+     */
+    public function get_search_engines($range, $limit = 20) {
+        global $wpdb;
+
+        $date_range = $this->get_date_range($range);
+        $sessions_table = JEA_Database::get_table('sessions');
+
+        $results = $wpdb->get_results($wpdb->prepare(
+            "SELECT
+                referrer_domain,
+                referrer,
+                COUNT(*) as sessions,
+                COUNT(DISTINCT visitor_id) as visitors
+             FROM $sessions_table
+             WHERE start_time BETWEEN %s AND %s
+               AND referrer_type = 'search'
+               AND referrer_domain != ''
+             GROUP BY referrer_domain
+             ORDER BY sessions DESC
+             LIMIT %d",
+            $date_range['start'],
+            $date_range['end'],
+            $limit
+        ));
+
+        // 添加搜索引擎名称
+        $search_engine_names = array(
+            'google' => array('name' => 'Google', 'icon' => '🔍', 'url' => 'https://www.google.com'),
+            'baidu' => array('name' => '百度', 'icon' => '🔎', 'url' => 'https://www.baidu.com'),
+            'bing' => array('name' => 'Bing', 'icon' => '🔍', 'url' => 'https://www.bing.com'),
+            'sogou' => array('name' => '搜狗', 'icon' => '🔎', 'url' => 'https://www.sogou.com'),
+            'so.com' => array('name' => '360搜索', 'icon' => '🔎', 'url' => 'https://www.so.com'),
+            'yahoo' => array('name' => 'Yahoo', 'icon' => '🔍', 'url' => 'https://www.yahoo.com'),
+            'yandex' => array('name' => 'Yandex', 'icon' => '🔍', 'url' => 'https://www.yandex.com'),
+            'duckduckgo' => array('name' => 'DuckDuckGo', 'icon' => '🦆', 'url' => 'https://duckduckgo.com'),
+            'shenma' => array('name' => '神马搜索', 'icon' => '🔎', 'url' => 'https://m.sm.cn'),
+            'haosou' => array('name' => '好搜', 'icon' => '🔎', 'url' => 'https://www.haosou.com'),
+        );
+
+        foreach ($results as &$result) {
+            $domain = strtolower($result->referrer_domain);
+            $result->engine_name = $result->referrer_domain;
+            $result->engine_icon = '🔍';
+            $result->engine_url = 'https://' . $result->referrer_domain;
+
+            foreach ($search_engine_names as $key => $info) {
+                if (strpos($domain, $key) !== false) {
+                    $result->engine_name = $info['name'];
+                    $result->engine_icon = $info['icon'];
+                    $result->engine_url = $info['url'];
+                    break;
+                }
+            }
+        }
+
+        return $results;
+    }
+
+    /**
+     * 获取设备品牌型号统计
+     */
+    public function get_device_brands($range, $limit = 20) {
+        global $wpdb;
+
+        $date_range = $this->get_date_range($range);
+        $visitors_table = JEA_Database::get_table('visitors');
+        $sessions_table = JEA_Database::get_table('sessions');
+
+        return $wpdb->get_results($wpdb->prepare(
+            "SELECT
+                v.device_type,
+                v.device_brand,
+                v.device_model,
+                v.os,
+                v.os_version,
+                COUNT(*) as count
+             FROM $visitors_table v
+             INNER JOIN $sessions_table s ON v.id = s.visitor_id
+             WHERE s.start_time BETWEEN %s AND %s
+               AND v.device_type IN ('mobile', 'tablet')
+             GROUP BY v.device_brand, v.device_model
+             ORDER BY count DESC
+             LIMIT %d",
+            $date_range['start'],
+            $date_range['end'],
+            $limit
+        ));
+    }
+
+    /**
+     * 获取详细地理位置统计（国家-省-城市）
+     */
+    public function get_geo_stats($range) {
+        global $wpdb;
+
+        $date_range = $this->get_date_range($range);
+        $visitors_table = JEA_Database::get_table('visitors');
+        $sessions_table = JEA_Database::get_table('sessions');
+
+        // 国家统计
+        $countries = $wpdb->get_results($wpdb->prepare(
+            "SELECT
+                v.country,
+                v.country_code,
+                COUNT(*) as count
+             FROM $visitors_table v
+             INNER JOIN $sessions_table s ON v.id = s.visitor_id
+             WHERE s.start_time BETWEEN %s AND %s AND v.country != ''
+             GROUP BY v.country_code
+             ORDER BY count DESC
+             LIMIT 20",
+            $date_range['start'],
+            $date_range['end']
+        ));
+
+        // 省/地区统计
+        $regions = $wpdb->get_results($wpdb->prepare(
+            "SELECT
+                v.country,
+                v.country_code,
+                v.region,
+                COUNT(*) as count
+             FROM $visitors_table v
+             INNER JOIN $sessions_table s ON v.id = s.visitor_id
+             WHERE s.start_time BETWEEN %s AND %s AND v.region != ''
+             GROUP BY v.country_code, v.region
+             ORDER BY count DESC
+             LIMIT 20",
+            $date_range['start'],
+            $date_range['end']
+        ));
+
+        // 城市统计
+        $cities = $wpdb->get_results($wpdb->prepare(
+            "SELECT
+                v.country,
+                v.country_code,
+                v.region,
+                v.city,
+                COUNT(*) as count
+             FROM $visitors_table v
+             INNER JOIN $sessions_table s ON v.id = s.visitor_id
+             WHERE s.start_time BETWEEN %s AND %s AND v.city != ''
+             GROUP BY v.country_code, v.city
+             ORDER BY count DESC
+             LIMIT 20",
+            $date_range['start'],
+            $date_range['end']
+        ));
+
+        return array(
+            'countries' => $countries,
+            'regions' => $regions,
+            'cities' => $cities,
+        );
+    }
+
+    /**
+     * 获取最近访客列表（含IP）
+     */
+    public function get_recent_visitors($range, $limit = 50) {
+        global $wpdb;
+
+        $date_range = $this->get_date_range($range);
+        $visitors_table = JEA_Database::get_table('visitors');
+        $sessions_table = JEA_Database::get_table('sessions');
+
+        return $wpdb->get_results($wpdb->prepare(
+            "SELECT
+                v.id,
+                v.ip_address,
+                v.country,
+                v.country_code,
+                v.region,
+                v.city,
+                v.browser,
+                v.browser_version,
+                v.os,
+                v.os_version,
+                v.device_type,
+                v.device_brand,
+                v.device_model,
+                v.screen_width,
+                v.screen_height,
+                v.first_visit,
+                v.last_visit,
+                v.visit_count,
+                s.referrer_domain,
+                s.referrer_type,
+                s.entry_page,
+                s.pageviews as session_pageviews,
+                s.duration as session_duration
+             FROM $visitors_table v
+             INNER JOIN $sessions_table s ON v.id = s.visitor_id
+             WHERE s.start_time BETWEEN %s AND %s
+             ORDER BY s.start_time DESC
              LIMIT %d",
             $date_range['start'],
             $date_range['end'],

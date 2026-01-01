@@ -94,12 +94,311 @@
                         self.updateCountries(response.data.countries);
                         self.updateHourlyChart(response.data.hourly);
                         self.loadChartData();
+
+                        // 加载新增数据模块
+                        self.loadSearchEngines();
+                        self.loadGeoStats();
+                        self.loadDeviceBrands();
+                        self.loadRecentVisitors();
                     }
                 },
                 complete: function() {
                     $('.jea-stats-grid').removeClass('loading');
                 }
             });
+        },
+
+        // 加载搜索引擎数据
+        loadSearchEngines: function() {
+            const self = this;
+
+            $.ajax({
+                url: jeaAdmin.ajaxUrl,
+                type: 'POST',
+                data: {
+                    action: 'jea_get_search_engines',
+                    nonce: jeaAdmin.nonce,
+                    range: this.currentRange
+                },
+                success: function(response) {
+                    if (response.success) {
+                        self.updateSearchEngines(response.data);
+                    }
+                }
+            });
+        },
+
+        // 加载地理位置统计
+        loadGeoStats: function() {
+            const self = this;
+
+            $.ajax({
+                url: jeaAdmin.ajaxUrl,
+                type: 'POST',
+                data: {
+                    action: 'jea_get_geo_stats',
+                    nonce: jeaAdmin.nonce,
+                    range: this.currentRange
+                },
+                success: function(response) {
+                    if (response.success) {
+                        self.updateGeoStats(response.data);
+                    }
+                }
+            });
+        },
+
+        // 加载设备品牌数据
+        loadDeviceBrands: function() {
+            const self = this;
+
+            $.ajax({
+                url: jeaAdmin.ajaxUrl,
+                type: 'POST',
+                data: {
+                    action: 'jea_get_device_brands',
+                    nonce: jeaAdmin.nonce,
+                    range: this.currentRange
+                },
+                success: function(response) {
+                    if (response.success) {
+                        self.updateDeviceBrands(response.data);
+                    }
+                }
+            });
+        },
+
+        // 加载最近访客数据
+        loadRecentVisitors: function() {
+            const self = this;
+
+            $.ajax({
+                url: jeaAdmin.ajaxUrl,
+                type: 'POST',
+                data: {
+                    action: 'jea_get_recent_visitors',
+                    nonce: jeaAdmin.nonce,
+                    range: this.currentRange
+                },
+                success: function(response) {
+                    if (response.success) {
+                        self.updateRecentVisitors(response.data);
+                    }
+                }
+            });
+        },
+
+        // 更新搜索引擎列表
+        updateSearchEngines: function(engines) {
+            const $container = $('#search-engines-list');
+            if (!$container.length) return;
+
+            if (!engines || engines.length === 0) {
+                $container.html('<div class="jea-empty"><div class="jea-empty-icon">🔍</div><div class="jea-empty-title">暂无搜索引擎数据</div></div>');
+                return;
+            }
+
+            let html = '<table class="jea-table"><thead><tr><th>搜索引擎</th><th>访问量</th><th>链接</th></tr></thead><tbody>';
+
+            engines.forEach(function(engine) {
+                html += '<tr>';
+                html += '<td><div class="jea-engine-name">';
+                html += '<span class="jea-engine-icon">' + (engine.engine_icon || '🔍') + '</span>';
+                html += '<span>' + (engine.engine_name || engine.referrer_domain || '未知') + '</span>';
+                html += '</div></td>';
+                html += '<td><strong>' + parseInt(engine.count).toLocaleString() + '</strong></td>';
+                html += '<td>';
+                if (engine.engine_url) {
+                    html += '<a href="' + engine.engine_url + '" target="_blank" class="jea-link-btn">访问 →</a>';
+                } else {
+                    html += '-';
+                }
+                html += '</td>';
+                html += '</tr>';
+            });
+
+            html += '</tbody></table>';
+            $container.html(html);
+        },
+
+        // 更新地理位置统计
+        updateGeoStats: function(data) {
+            const $container = $('#geo-stats-list');
+            if (!$container.length) return;
+
+            if (!data || (!data.countries?.length && !data.regions?.length && !data.cities?.length)) {
+                $container.html('<div class="jea-empty"><div class="jea-empty-icon">🌍</div><div class="jea-empty-title">暂无地理数据</div></div>');
+                return;
+            }
+
+            let html = '<div class="jea-geo-tabs">';
+            html += '<button class="jea-geo-tab active" data-tab="countries">国家/地区</button>';
+            html += '<button class="jea-geo-tab" data-tab="regions">省份</button>';
+            html += '<button class="jea-geo-tab" data-tab="cities">城市</button>';
+            html += '</div>';
+
+            // 国家榜单
+            html += '<div class="jea-geo-content active" id="geo-countries">';
+            if (data.countries && data.countries.length > 0) {
+                html += '<div class="jea-ranking-list">';
+                data.countries.forEach(function(item, index) {
+                    const flag = item.country_code ?
+                        String.fromCodePoint(...item.country_code.toUpperCase().split('').map(c => 127397 + c.charCodeAt(0))) : '🌍';
+                    html += '<div class="jea-ranking-item">';
+                    html += '<span class="jea-ranking-num">' + (index + 1) + '</span>';
+                    html += '<span class="jea-ranking-flag">' + flag + '</span>';
+                    html += '<span class="jea-ranking-name">' + (item.country || '未知') + '</span>';
+                    html += '<span class="jea-ranking-count">' + parseInt(item.count).toLocaleString() + '</span>';
+                    html += '</div>';
+                });
+                html += '</div>';
+            } else {
+                html += '<div class="jea-empty-small">暂无数据</div>';
+            }
+            html += '</div>';
+
+            // 省份榜单
+            html += '<div class="jea-geo-content" id="geo-regions">';
+            if (data.regions && data.regions.length > 0) {
+                html += '<div class="jea-ranking-list">';
+                data.regions.forEach(function(item, index) {
+                    html += '<div class="jea-ranking-item">';
+                    html += '<span class="jea-ranking-num">' + (index + 1) + '</span>';
+                    html += '<span class="jea-ranking-icon">📍</span>';
+                    html += '<span class="jea-ranking-name">' + (item.region || '未知') + '</span>';
+                    html += '<span class="jea-ranking-count">' + parseInt(item.count).toLocaleString() + '</span>';
+                    html += '</div>';
+                });
+                html += '</div>';
+            } else {
+                html += '<div class="jea-empty-small">暂无数据</div>';
+            }
+            html += '</div>';
+
+            // 城市榜单
+            html += '<div class="jea-geo-content" id="geo-cities">';
+            if (data.cities && data.cities.length > 0) {
+                html += '<div class="jea-ranking-list">';
+                data.cities.forEach(function(item, index) {
+                    html += '<div class="jea-ranking-item">';
+                    html += '<span class="jea-ranking-num">' + (index + 1) + '</span>';
+                    html += '<span class="jea-ranking-icon">🏙️</span>';
+                    html += '<span class="jea-ranking-name">' + (item.city || '未知') + '</span>';
+                    html += '<span class="jea-ranking-count">' + parseInt(item.count).toLocaleString() + '</span>';
+                    html += '</div>';
+                });
+                html += '</div>';
+            } else {
+                html += '<div class="jea-empty-small">暂无数据</div>';
+            }
+            html += '</div>';
+
+            $container.html(html);
+
+            // 绑定tab切换事件
+            $container.find('.jea-geo-tab').on('click', function() {
+                const tab = $(this).data('tab');
+                $container.find('.jea-geo-tab').removeClass('active');
+                $(this).addClass('active');
+                $container.find('.jea-geo-content').removeClass('active');
+                $container.find('#geo-' + tab).addClass('active');
+            });
+        },
+
+        // 更新设备品牌列表
+        updateDeviceBrands: function(brands) {
+            const $container = $('#device-brands-list');
+            if (!$container.length) return;
+
+            if (!brands || brands.length === 0) {
+                $container.html('<div class="jea-empty"><div class="jea-empty-icon">📱</div><div class="jea-empty-title">暂无设备品牌数据</div></div>');
+                return;
+            }
+
+            const deviceIcons = {
+                'desktop': '🖥️',
+                'mobile': '📱',
+                'tablet': '📱'
+            };
+
+            const brandIcons = {
+                'Apple': '🍎',
+                'Samsung': '📱',
+                'Huawei': '📱',
+                'Xiaomi': '📱',
+                'OPPO': '📱',
+                'vivo': '📱',
+                'OnePlus': '📱',
+                'Google': '📱',
+                'Sony': '📱',
+                'LG': '📱'
+            };
+
+            let html = '<table class="jea-table"><thead><tr><th>设备类型</th><th>品牌</th><th>型号</th><th>系统</th><th>访问量</th></tr></thead><tbody>';
+
+            brands.forEach(function(device) {
+                const typeIcon = deviceIcons[device.device_type] || '📱';
+                const brandIcon = brandIcons[device.device_brand] || '';
+
+                html += '<tr>';
+                html += '<td><span class="jea-device-type">' + typeIcon + ' ' + (device.device_type === 'mobile' ? '手机' : device.device_type === 'tablet' ? '平板' : '桌面') + '</span></td>';
+                html += '<td><strong>' + brandIcon + ' ' + (device.device_brand || '-') + '</strong></td>';
+                html += '<td>' + (device.device_model || '-') + '</td>';
+                html += '<td><span class="jea-os-badge">' + (device.os || '-') + (device.os_version ? ' ' + device.os_version : '') + '</span></td>';
+                html += '<td><strong>' + parseInt(device.count).toLocaleString() + '</strong></td>';
+                html += '</tr>';
+            });
+
+            html += '</tbody></table>';
+            $container.html(html);
+        },
+
+        // 更新最近访客列表
+        updateRecentVisitors: function(visitors) {
+            const $container = $('#recent-visitors-list');
+            if (!$container.length) return;
+
+            if (!visitors || visitors.length === 0) {
+                $container.html('<div class="jea-empty"><div class="jea-empty-icon">👥</div><div class="jea-empty-title">暂无访客数据</div></div>');
+                return;
+            }
+
+            let html = '<table class="jea-table jea-visitors-table"><thead><tr>';
+            html += '<th>IP地址</th>';
+            html += '<th>地理位置</th>';
+            html += '<th>设备/浏览器</th>';
+            html += '<th>访问页面</th>';
+            html += '<th>访问时间</th>';
+            html += '</tr></thead><tbody>';
+
+            visitors.forEach(function(visitor) {
+                const flag = visitor.country_code ?
+                    String.fromCodePoint(...visitor.country_code.toUpperCase().split('').map(c => 127397 + c.charCodeAt(0))) : '🌍';
+
+                const location = [visitor.country, visitor.region, visitor.city]
+                    .filter(Boolean)
+                    .join(' › ') || '未知';
+
+                const deviceInfo = [
+                    visitor.device_type === 'mobile' ? '📱' : visitor.device_type === 'tablet' ? '📱' : '🖥️',
+                    visitor.device_brand,
+                    visitor.browser
+                ].filter(Boolean).join(' ');
+
+                const visitTime = new Date(visitor.created_at).toLocaleString('zh-CN');
+                const pageTitle = visitor.page_title || visitor.page_url || '-';
+
+                html += '<tr>';
+                html += '<td><code class="jea-ip-address">' + (visitor.ip_address || '-') + '</code></td>';
+                html += '<td><span class="jea-location">' + flag + ' ' + location + '</span></td>';
+                html += '<td><span class="jea-device-info">' + deviceInfo + '</span></td>';
+                html += '<td><span class="jea-page-title" title="' + pageTitle + '">' + (pageTitle.length > 30 ? pageTitle.substr(0, 30) + '...' : pageTitle) + '</span></td>';
+                html += '<td><span class="jea-visit-time">' + visitTime + '</span></td>';
+                html += '</tr>';
+            });
+
+            html += '</tbody></table>';
+            $container.html(html);
         },
 
         // 更新统计数字
