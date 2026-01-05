@@ -379,21 +379,20 @@ class JEA_Tracker {
             return 'internal';
         }
 
-        // 搜索引擎
+        $referrer_lower = strtolower($referrer_host);
+
+        // 搜索引擎 - 扩展列表
         $search_engines = array(
-            'google' => 'google',
-            'bing' => 'bing',
-            'yahoo' => 'yahoo',
-            'baidu' => 'baidu',
-            'yandex' => 'yandex',
-            'duckduckgo' => 'duckduckgo',
-            'sogou' => 'sogou',
-            'so.com' => '360',
-            'shenma' => 'shenma',
+            'google', 'bing', 'yahoo', 'baidu', 'yandex', 'duckduckgo',
+            'sogou', 'so.com', 'haosou', 'shenma', 'sm.cn', 'ask.com',
+            'aol', 'ecosia', 'qwant', 'startpage', 'searx', 'youdao',
+            'chinaso', 'toutiao', 'search.', 'ixquick', 'gibiru',
+            'wolframalpha', 'boardreader', 'webcrawler', 'dogpile',
+            'excite', 'lycos', 'metager', 'mojeek', 'presearch'
         );
 
-        foreach ($search_engines as $engine => $name) {
-            if (stripos($referrer_host, $engine) !== false) {
+        foreach ($search_engines as $engine) {
+            if (strpos($referrer_lower, $engine) !== false) {
                 return 'search';
             }
         }
@@ -402,19 +401,20 @@ class JEA_Tracker {
         $social_networks = array(
             'facebook', 'twitter', 'instagram', 'linkedin', 'pinterest',
             'youtube', 'tiktok', 'reddit', 'weibo', 'wechat', 'qq.com',
-            'whatsapp', 'telegram', 'snapchat', 't.co', 'fb.com'
+            'whatsapp', 'telegram', 'snapchat', 't.co', 'fb.com',
+            'douyin', 'bilibili', 'zhihu', 'xiaohongshu', 'kuaishou'
         );
 
         foreach ($social_networks as $network) {
-            if (stripos($referrer_host, $network) !== false) {
+            if (strpos($referrer_lower, $network) !== false) {
                 return 'social';
             }
         }
 
         // 邮件
-        $email_domains = array('mail', 'outlook', 'gmail', 'yahoo', 'newsletter');
+        $email_domains = array('mail', 'outlook', 'gmail', 'newsletter', 'mailchimp', 'sendgrid');
         foreach ($email_domains as $email) {
-            if (stripos($referrer_host, $email) !== false) {
+            if (strpos($referrer_lower, $email) !== false) {
                 return 'email';
             }
         }

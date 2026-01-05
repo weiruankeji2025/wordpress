@@ -508,36 +508,60 @@ class JEA_Stats {
         $date_range = $this->get_date_range($range);
         $sessions_table = JEA_Database::get_table('sessions');
 
+        // 搜索引擎域名关键词列表
+        $search_engine_keywords = array(
+            'google', 'baidu', 'bing', 'sogou', 'so.com', 'yahoo', 'yandex',
+            'duckduckgo', 'shenma', 'sm.cn', 'haosou', 'ask.com', 'aol',
+            'ecosia', 'qwant', 'startpage', 'searx', 'gibiru', 'boardreader',
+            'search.', 'youdao', 'chinaso', 'toutiao'
+        );
+
+        // 构建搜索引擎域名匹配条件
+        $like_conditions = array();
+        foreach ($search_engine_keywords as $keyword) {
+            $like_conditions[] = $wpdb->prepare("referrer_domain LIKE %s", '%' . $keyword . '%');
+        }
+        $like_sql = implode(' OR ', $like_conditions);
+
+        // 查询：优先使用 referrer_type='search'，同时也通过域名匹配
         $results = $wpdb->get_results($wpdb->prepare(
             "SELECT
                 referrer_domain,
                 referrer,
-                COUNT(*) as sessions,
+                COUNT(*) as count,
                 COUNT(DISTINCT visitor_id) as visitors
              FROM $sessions_table
              WHERE start_time BETWEEN %s AND %s
-               AND referrer_type = 'search'
                AND referrer_domain != ''
+               AND (referrer_type = 'search' OR ($like_sql))
              GROUP BY referrer_domain
-             ORDER BY sessions DESC
+             ORDER BY count DESC
              LIMIT %d",
             $date_range['start'],
             $date_range['end'],
             $limit
         ));
 
-        // 添加搜索引擎名称
-        $search_engine_names = array(
+        // 添加搜索引擎名称、图标、URL
+        $search_engine_info = array(
             'google' => array('name' => 'Google', 'icon' => '🔍', 'url' => 'https://www.google.com'),
             'baidu' => array('name' => '百度', 'icon' => '🔎', 'url' => 'https://www.baidu.com'),
             'bing' => array('name' => 'Bing', 'icon' => '🔍', 'url' => 'https://www.bing.com'),
             'sogou' => array('name' => '搜狗', 'icon' => '🔎', 'url' => 'https://www.sogou.com'),
             'so.com' => array('name' => '360搜索', 'icon' => '🔎', 'url' => 'https://www.so.com'),
-            'yahoo' => array('name' => 'Yahoo', 'icon' => '🔍', 'url' => 'https://www.yahoo.com'),
+            'haosou' => array('name' => '360搜索', 'icon' => '🔎', 'url' => 'https://www.haosou.com'),
+            'yahoo' => array('name' => 'Yahoo', 'icon' => '🔍', 'url' => 'https://search.yahoo.com'),
             'yandex' => array('name' => 'Yandex', 'icon' => '🔍', 'url' => 'https://www.yandex.com'),
             'duckduckgo' => array('name' => 'DuckDuckGo', 'icon' => '🦆', 'url' => 'https://duckduckgo.com'),
+            'sm.cn' => array('name' => '神马搜索', 'icon' => '🔎', 'url' => 'https://m.sm.cn'),
             'shenma' => array('name' => '神马搜索', 'icon' => '🔎', 'url' => 'https://m.sm.cn'),
-            'haosou' => array('name' => '好搜', 'icon' => '🔎', 'url' => 'https://www.haosou.com'),
+            'youdao' => array('name' => '有道', 'icon' => '🔎', 'url' => 'https://www.youdao.com'),
+            'chinaso' => array('name' => '中国搜索', 'icon' => '🔎', 'url' => 'https://www.chinaso.com'),
+            'toutiao' => array('name' => '头条搜索', 'icon' => '🔎', 'url' => 'https://so.toutiao.com'),
+            'ask.com' => array('name' => 'Ask.com', 'icon' => '🔍', 'url' => 'https://www.ask.com'),
+            'aol' => array('name' => 'AOL Search', 'icon' => '🔍', 'url' => 'https://search.aol.com'),
+            'ecosia' => array('name' => 'Ecosia', 'icon' => '🌳', 'url' => 'https://www.ecosia.org'),
+            'qwant' => array('name' => 'Qwant', 'icon' => '🔍', 'url' => 'https://www.qwant.com'),
         );
 
         foreach ($results as &$result) {
@@ -546,7 +570,7 @@ class JEA_Stats {
             $result->engine_icon = '🔍';
             $result->engine_url = 'https://' . $result->referrer_domain;
 
-            foreach ($search_engine_names as $key => $info) {
+            foreach ($search_engine_info as $key => $info) {
                 if (strpos($domain, $key) !== false) {
                     $result->engine_name = $info['name'];
                     $result->engine_icon = $info['icon'];
