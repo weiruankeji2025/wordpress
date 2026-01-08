@@ -12,20 +12,20 @@
         // 当前选择的日期范围
         currentRange: '7days',
 
-        // 图表颜色
+        // 图表颜色 - 科技风格
         colors: {
-            primary: '#6366f1',
-            secondary: '#0ea5e9',
-            success: '#22c55e',
+            primary: '#3b82f6',
+            secondary: '#10b981',
+            success: '#10b981',
             warning: '#f59e0b',
             danger: '#ef4444',
             purple: '#8b5cf6',
             pink: '#ec4899',
             teal: '#14b8a6',
             gradient: {
-                primary: ['rgba(99, 102, 241, 0.8)', 'rgba(99, 102, 241, 0.1)'],
-                secondary: ['rgba(14, 165, 233, 0.8)', 'rgba(14, 165, 233, 0.1)'],
-                success: ['rgba(34, 197, 94, 0.8)', 'rgba(34, 197, 94, 0.1)'],
+                primary: ['rgba(59, 130, 246, 0.5)', 'rgba(59, 130, 246, 0)'],
+                secondary: ['rgba(16, 185, 129, 0.5)', 'rgba(16, 185, 129, 0)'],
+                success: ['rgba(16, 185, 129, 0.5)', 'rgba(16, 185, 129, 0)'],
             }
         },
 
