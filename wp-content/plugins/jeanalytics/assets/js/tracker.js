@@ -136,12 +136,34 @@
 
         // 获取来源域名
         getReferrerDomain: function() {
-            if (!pageData.referrer) return '';
+            const referrer = this.getOriginalReferrer();
+            if (!referrer) return '';
             try {
-                const url = new URL(pageData.referrer);
+                const url = new URL(referrer);
                 return url.hostname;
             } catch (e) {
                 return '';
+            }
+        },
+
+        // 获取原始来源（会话首次进入时的referrer）
+        getOriginalReferrer: function() {
+            // 优先使用会话存储的原始referrer
+            let sessionData = JSON.parse(sessionStorage.getItem('jea_session') || 'null');
+            if (sessionData && sessionData.originalReferrer !== undefined) {
+                return sessionData.originalReferrer;
+            }
+            // 如果没有存储，使用当前的referrer并存储
+            const currentReferrer = pageData.referrer || document.referrer || '';
+            return currentReferrer;
+        },
+
+        // 保存原始来源到会话
+        saveOriginalReferrer: function(referrer) {
+            let sessionData = JSON.parse(sessionStorage.getItem('jea_session') || 'null');
+            if (sessionData && sessionData.originalReferrer === undefined) {
+                sessionData.originalReferrer = referrer;
+                sessionStorage.setItem('jea_session', JSON.stringify(sessionData));
             }
         },
 
@@ -186,6 +208,14 @@
         trackPageview: function(isNewSession, isEntryPage) {
             const screen = utils.getScreenInfo();
 
+            // 获取原始来源（首次进入会话时的referrer）
+            const originalReferrer = utils.getOriginalReferrer();
+
+            // 如果是新会话，保存原始来源
+            if (isNewSession) {
+                utils.saveOriginalReferrer(pageData.referrer || document.referrer || '');
+            }
+
             const data = {
                 visitorId: state.visitorId,
                 sessionId: state.sessionId,
@@ -193,7 +223,7 @@
                 pageTitle: pageData.pageTitle || document.title,
                 pageType: pageData.pageType || 'other',
                 postId: pageData.postId || 0,
-                referrer: pageData.referrer || document.referrer,
+                referrer: originalReferrer,
                 referrerDomain: utils.getReferrerDomain(),
                 isNewSession: isNewSession,
                 isEntryPage: isEntryPage,
@@ -206,15 +236,21 @@
                 pixelRatio: screen.pixelRatio,
                 language: utils.getLanguage(),
                 timezone: utils.getTimezone(),
-                utmSource: pageData.utm_source || '',
-                utmMedium: pageData.utm_medium || '',
-                utmCampaign: pageData.utm_campaign || '',
-                utmTerm: pageData.utm_term || '',
-                utmContent: pageData.utm_content || '',
+                utmSource: pageData.utm_source || this.getUrlParam('utm_source') || '',
+                utmMedium: pageData.utm_medium || this.getUrlParam('utm_medium') || '',
+                utmCampaign: pageData.utm_campaign || this.getUrlParam('utm_campaign') || '',
+                utmTerm: pageData.utm_term || this.getUrlParam('utm_term') || '',
+                utmContent: pageData.utm_content || this.getUrlParam('utm_content') || '',
                 timestamp: Date.now()
             };
 
             utils.sendData('track_pageview', data);
+        },
+
+        // 从URL获取参数
+        getUrlParam: function(name) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(name) || '';
         },
 
         // 绑定事件

@@ -478,7 +478,8 @@ class JEA_Stats {
         $date_range = $this->get_date_range($range);
         $sessions_table = JEA_Database::get_table('sessions');
 
-        return $wpdb->get_results($wpdb->prepare(
+        // 获取有来源域名的流量
+        $external_referrers = $wpdb->get_results($wpdb->prepare(
             "SELECT
                 referrer_domain,
                 referrer_type,
@@ -489,7 +490,7 @@ class JEA_Stats {
                 AVG(duration) as avg_duration,
                 AVG(pageviews) as avg_pages
              FROM $sessions_table
-             WHERE start_time BETWEEN %s AND %s AND referrer_domain != ''
+             WHERE start_time BETWEEN %s AND %s AND referrer_domain != '' AND referrer_type != 'internal'
              GROUP BY referrer_domain
              ORDER BY sessions DESC
              LIMIT %d",
@@ -497,6 +498,111 @@ class JEA_Stats {
             $date_range['end'],
             $limit
         ));
+
+        // 获取直接访问的统计
+        $direct_stats = $wpdb->get_row($wpdb->prepare(
+            "SELECT
+                COUNT(*) as sessions,
+                COUNT(DISTINCT visitor_id) as visitors,
+                SUM(is_bounce) as bounces,
+                AVG(duration) as avg_duration,
+                AVG(pageviews) as avg_pages
+             FROM $sessions_table
+             WHERE start_time BETWEEN %s AND %s
+               AND (referrer_domain = '' OR referrer_domain IS NULL OR referrer_type = 'direct')",
+            $date_range['start'],
+            $date_range['end']
+        ));
+
+        $results = array();
+
+        // 添加直接访问
+        if ($direct_stats && $direct_stats->sessions > 0) {
+            $results[] = (object) array(
+                'referrer_domain' => '',
+                'referrer_type' => 'direct',
+                'referrer' => '',
+                'sessions' => (int)$direct_stats->sessions,
+                'visitors' => (int)$direct_stats->visitors,
+                'bounces' => (int)$direct_stats->bounces,
+                'avg_duration' => (float)$direct_stats->avg_duration,
+                'avg_pages' => (float)$direct_stats->avg_pages,
+            );
+        }
+
+        // 添加外部来源
+        foreach ($external_referrers as $ref) {
+            $results[] = $ref;
+        }
+
+        // 按会话数排序
+        usort($results, function($a, $b) {
+            return $b->sessions - $a->sessions;
+        });
+
+        return array_slice($results, 0, $limit);
+    }
+
+    /**
+     * 获取流量来源类型汇总
+     */
+    public function get_traffic_sources($range) {
+        global $wpdb;
+
+        $date_range = $this->get_date_range($range);
+        $sessions_table = JEA_Database::get_table('sessions');
+
+        // 使用更可靠的方式统计流量来源
+        // 优先使用 UTM 参数，其次使用 referrer_type
+        $type_stats = $wpdb->get_results($wpdb->prepare(
+            "SELECT
+                CASE
+                    WHEN utm_source != '' AND utm_source IS NOT NULL THEN
+                        CASE
+                            WHEN utm_medium IN ('cpc', 'ppc', 'paid', 'paidsearch') THEN 'search'
+                            WHEN utm_medium IN ('social', 'social-media', 'sm') THEN 'social'
+                            WHEN utm_medium IN ('email', 'newsletter', 'mail') THEN 'email'
+                            WHEN utm_source IN ('google', 'bing', 'baidu', 'yahoo', 'yandex', 'duckduckgo', 'sogou') THEN 'search'
+                            WHEN utm_source IN ('facebook', 'twitter', 'instagram', 'linkedin', 'weibo', 'wechat', 'tiktok') THEN 'social'
+                            ELSE 'referral'
+                        END
+                    WHEN referrer_domain = '' OR referrer_domain IS NULL THEN 'direct'
+                    WHEN referrer_type = 'internal' THEN 'direct'
+                    ELSE COALESCE(referrer_type, 'referral')
+                END as source_type,
+                COUNT(*) as sessions,
+                COUNT(DISTINCT visitor_id) as visitors,
+                SUM(is_bounce) as bounces,
+                AVG(duration) as avg_duration
+             FROM $sessions_table
+             WHERE start_time BETWEEN %s AND %s
+             GROUP BY source_type
+             ORDER BY sessions DESC",
+            $date_range['start'],
+            $date_range['end']
+        ));
+
+        $result = array(
+            'direct' => array('sessions' => 0, 'visitors' => 0, 'bounces' => 0, 'avg_duration' => 0),
+            'search' => array('sessions' => 0, 'visitors' => 0, 'bounces' => 0, 'avg_duration' => 0),
+            'social' => array('sessions' => 0, 'visitors' => 0, 'bounces' => 0, 'avg_duration' => 0),
+            'referral' => array('sessions' => 0, 'visitors' => 0, 'bounces' => 0, 'avg_duration' => 0),
+            'email' => array('sessions' => 0, 'visitors' => 0, 'bounces' => 0, 'avg_duration' => 0),
+        );
+
+        foreach ($type_stats as $stat) {
+            $type = $stat->source_type;
+            if (isset($result[$type])) {
+                $result[$type] = array(
+                    'sessions' => (int)$stat->sessions,
+                    'visitors' => (int)$stat->visitors,
+                    'bounces' => (int)$stat->bounces,
+                    'avg_duration' => (float)$stat->avg_duration,
+                );
+            }
+        }
+
+        return $result;
     }
 
     /**

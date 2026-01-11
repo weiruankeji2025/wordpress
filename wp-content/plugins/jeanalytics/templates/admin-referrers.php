@@ -11,22 +11,19 @@ if (!defined('ABSPATH')) {
 $stats = new JEA_Stats();
 $range = isset($_GET['range']) ? sanitize_text_field($_GET['range']) : '7days';
 $referrers = $stats->get_referrers($range, 100);
+$traffic_sources = $stats->get_traffic_sources($range);
 
-// 计算各类型总数
+// 从traffic_sources获取各类型总数
 $type_totals = array(
-    'direct' => 0,
-    'search' => 0,
-    'social' => 0,
-    'referral' => 0,
-    'email' => 0,
+    'direct' => $traffic_sources['direct']['sessions'],
+    'search' => $traffic_sources['search']['sessions'],
+    'social' => $traffic_sources['social']['sessions'],
+    'referral' => $traffic_sources['referral']['sessions'],
+    'email' => $traffic_sources['email']['sessions'],
 );
 
-foreach ($referrers as $ref) {
-    $type = $ref->referrer_type;
-    if (isset($type_totals[$type])) {
-        $type_totals[$type] += intval($ref->sessions);
-    }
-}
+// 计算总会话数
+$total_sessions = array_sum($type_totals);
 ?>
 
 <div class="jea-wrap jea-tech">
@@ -71,6 +68,11 @@ foreach ($referrers as $ref) {
     </div>
 
     <!-- 来源类型卡片 -->
+    <?php
+    $calc_percent = function($value) use ($total_sessions) {
+        return $total_sessions > 0 ? round(($value / $total_sessions) * 100, 1) : 0;
+    };
+    ?>
     <div class="jea-stats-grid" style="grid-template-columns: repeat(5, 1fr); margin-bottom: 24px;">
         <div class="jea-stat-card">
             <div class="jea-stat-header">
@@ -84,7 +86,7 @@ foreach ($referrers as $ref) {
                 </span>
             </div>
             <div class="jea-stat-value"><?php echo number_format($type_totals['direct']); ?></div>
-            <span class="jea-stat-change neutral"><?php _e('会话数', 'jeanalytics'); ?></span>
+            <span class="jea-stat-change neutral"><?php echo $calc_percent($type_totals['direct']); ?>%</span>
         </div>
 
         <div class="jea-stat-card">
@@ -98,7 +100,7 @@ foreach ($referrers as $ref) {
                 </span>
             </div>
             <div class="jea-stat-value"><?php echo number_format($type_totals['search']); ?></div>
-            <span class="jea-stat-change neutral"><?php _e('会话数', 'jeanalytics'); ?></span>
+            <span class="jea-stat-change neutral"><?php echo $calc_percent($type_totals['search']); ?>%</span>
         </div>
 
         <div class="jea-stat-card">
@@ -111,7 +113,7 @@ foreach ($referrers as $ref) {
                 </span>
             </div>
             <div class="jea-stat-value"><?php echo number_format($type_totals['social']); ?></div>
-            <span class="jea-stat-change neutral"><?php _e('会话数', 'jeanalytics'); ?></span>
+            <span class="jea-stat-change neutral"><?php echo $calc_percent($type_totals['social']); ?>%</span>
         </div>
 
         <div class="jea-stat-card">
@@ -126,7 +128,7 @@ foreach ($referrers as $ref) {
                 </span>
             </div>
             <div class="jea-stat-value"><?php echo number_format($type_totals['referral']); ?></div>
-            <span class="jea-stat-change neutral"><?php _e('会话数', 'jeanalytics'); ?></span>
+            <span class="jea-stat-change neutral"><?php echo $calc_percent($type_totals['referral']); ?>%</span>
         </div>
 
         <div class="jea-stat-card">
@@ -140,7 +142,7 @@ foreach ($referrers as $ref) {
                 </span>
             </div>
             <div class="jea-stat-value"><?php echo number_format($type_totals['email']); ?></div>
-            <span class="jea-stat-change neutral"><?php _e('会话数', 'jeanalytics'); ?></span>
+            <span class="jea-stat-change neutral"><?php echo $calc_percent($type_totals['email']); ?>%</span>
         </div>
     </div>
 
